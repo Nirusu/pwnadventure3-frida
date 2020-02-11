@@ -1,0 +1,1 @@
+gdb -p  $(pidof PwnAdventure3-Linux-Shipping) --batch -ex "b _ZN6Player12SetJumpStateEb" --ex "c" --ex "print &this->m_jumpSpeed" -ex "print this" -ex "print (int)\$1-(int)\$2" -ex "quit" 2>/dev/null | awk '/\$3/ {print $3 }'
