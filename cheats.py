@@ -139,18 +139,18 @@ script = session.create_script("""
         });
 
         // Find Player::SubmitDLCKey()
-        var dlcSubmit = Module.findExportByName("libGameLogic.so", "_ZN6Player12SubmitDLCKeyEPKc");
-        var newdlcSubmit = new NativeFunction(dlcSubmit, 'void', ['pointer', 'pointer']);
-        console.log("Player::SubmitDLCKey() at address: " + dlcSubmit);
+        var dlcSubmitAddr = Module.findExportByName("libGameLogic.so", "_ZN6Player12SubmitDLCKeyEPKc");
+        var dlcSubmit = new NativeFunction(dlcSubmitAddr, 'void', ['pointer', 'pointer']);
+        console.log("Player::SubmitDLCKey() at address: " + dlcSubmitAddr);
 
         function activateDLC(thisReference) {
             console.log("Trying to activate DLC...");
             var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
-            newdlcSubmit(thisReference, validKey);
+            dlcSubmit(thisReference, validKey);
             console.log("Submitted DLC. Did it work?");
         }
 
-        Interceptor.attach(dlcSubmit, {
+        Interceptor.attach(dlcSubmitAddr, {
             onEnter: function (args) {
                 console.log("This function was entered!");
                 console.log(Memory.readUtf8String(args[1]));
