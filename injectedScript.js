@@ -1,11 +1,14 @@
 // Global Values
 var Player = {
     m_walkingSpeed : 200,
+    objectInMemory: 0,
 };
+
 // Cheat status
 var cheatStatus = {
     walkingSpeed : 0,
     fly : 0,
+    freeze : 0,
 };
 function chatHelper(msg, thisReference) {
 var token = msg.split(" ");
@@ -16,6 +19,16 @@ if (token[0] === "!fly_on") {
 if (token[0] === "!fly_off") {
     console.log("[CHEAT]: Flying disabled.");
     cheatStatus.fly = 0;
+}
+if (token[0] === "!freeze_on") {
+    console.log("[CHEAT]: Freeze enabled.");
+    cheatStatus.freeze = 1;
+    freeze(thisReference);
+}
+if (token[0] === "!freeze_off") {
+    console.log("[CHEAT]: Freeze disabled.");
+    cheatStatus.freeze = 0;
+    freeze(thisReference);
 }
 if (token[0] === "!wspeed_on") {
     Player.m_walkingSpeed = parseInt(token[1]);
@@ -40,26 +53,60 @@ if (token[0] === "!tp") {
     teleport(thisReference, parseInt(token[1]), parseInt(token[2]), parseInt(token[3]));
     }
 }
-var getPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11GetPositionEv");
-console.log("Actor::GetPosition() at  address: " + getPositionAddr);
-var getPosition = new NativeFunction(getPositionAddr, ['float', 'float', 'float'], ['pointer']);
+
 function locate(thisReference) {
     var returnPtr = getPosition(thisReference);
     console.log(returnPtr[0]);
     console.log(returnPtr[1]);
     console.log(returnPtr[2]);
+    return [returnPtr[0], returnPtr[1], returnPtr[2]];
 }
-var setPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetPositionERK7Vector3");
-console.log("Actor::SetPosition() at  address: " + setPositionAddr);
-var setPosition = new NativeFunction(setPositionAddr, 'void', ['pointer', 'pointer']);
-var Vector3 = Memory.alloc(16);
+
 function teleport(thisReference, x, y, z) {
     Memory.writeFloat(Vector3, x);
     Memory.writeFloat(ptr(Vector3).add(4), y);
     Memory.writeFloat(ptr(Vector3).add(8), z);
     setPosition(thisReference, Vector3);
 }
-    //Find "Player::Chat"
+
+function freeze(thisReference) {
+    Player.objectInMemory = thisReference;
+    var startPosition = locate(thisReference);
+    teleport(thisReference, startPosition[0], startPosition[1], startPosition[2]);
+    Memory.writeFloat(Vector3, 0);
+    Memory.writeFloat(ptr(Vector3).add(4), 0);
+    Memory.writeFloat(ptr(Vector3).add(8), 0);
+    setVelocity(thisReference, Vector3);
+}
+
+
+var getPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11GetPositionEv");
+console.log("Actor::GetPosition() at  address: " + getPositionAddr);
+var getPosition = new NativeFunction(getPositionAddr, ['float', 'float', 'float'], ['pointer']);
+
+var setPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetPositionERK7Vector3");
+console.log("Actor::SetPosition() at  address: " + setPositionAddr);
+var setPosition = new NativeFunction(setPositionAddr, 'void', ['pointer', 'pointer']);
+
+var setVelocityAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetVelocityERK7Vector3");
+var setVelocity = new NativeFunction(setVelocityAddr, 'void', ['pointer', 'pointer']);
+console.log("Actor::SetVelocity() at  address: " + setVelocityAddr);
+
+var worldTickAddr = Module.findExportByName("libGameLogic.so", "_ZN5World4TickEf");
+console.log("World::Tick() at  address: " + worldTickAddr);
+
+Interceptor.attach(worldTickAddr,
+    {
+        onEnter: function (args) {
+            if (cheatStatus.freeze == 1) {
+                freeze(Player.objectInMemory);
+            }
+        }
+    });
+
+var Vector3 = Memory.alloc(16);
+
+//Find "Player::Chat"
 var chat = Module.findExportByName("libGameLogic.so", "_ZN6Player4ChatEPKc");
 console.log("Player::Chat() at  address: " + chat);
 // Add our logger
@@ -95,6 +142,7 @@ Interceptor.attach(walkSpeed,
 
 var jumpState = Module.findExportByName("libGameLogic.so", "_ZN6Player12SetJumpStateEb");
 console.log("Player::SetJumpState() at address: " + jumpState);
+
 Interceptor.attach(jumpState,
 {
     // Get Player * this location
