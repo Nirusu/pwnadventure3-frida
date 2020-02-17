@@ -10,6 +10,37 @@ var cheatStatus = {
     fly : 0,
     freeze : 0,
 };
+
+var Vector3 = Memory.alloc(16);
+
+var chat = Module.findExportByName("libGameLogic.so", "_ZN6Player4ChatEPKc");
+console.log("Player::Chat() at  address: " + chat);
+
+var walkSpeed = Module.findExportByName("libGameLogic.so", "_ZN6Player15GetWalkingSpeedEv");
+console.log("Player::GetWalkingSpeed() at address: " + walkSpeed);
+
+var jumpState = Module.findExportByName("libGameLogic.so", "_ZN6Player12SetJumpStateEb");
+console.log("Player::SetJumpState() at address: " + jumpState);
+
+var dlcSubmitAddr = Module.findExportByName("libGameLogic.so", "_ZN6Player12SubmitDLCKeyEPKc");
+var dlcSubmit = new NativeFunction(dlcSubmitAddr, 'void', ['pointer', 'pointer']);
+console.log("Player::SubmitDLCKey() at address: " + dlcSubmitAddr);
+
+var getPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11GetPositionEv");
+console.log("Actor::GetPosition() at  address: " + getPositionAddr);
+var getPosition = new NativeFunction(getPositionAddr, ['float', 'float', 'float'], ['pointer']);
+
+var setPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetPositionERK7Vector3");
+console.log("Actor::SetPosition() at  address: " + setPositionAddr);
+var setPosition = new NativeFunction(setPositionAddr, 'void', ['pointer', 'pointer']);
+
+var setVelocityAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetVelocityERK7Vector3");
+var setVelocity = new NativeFunction(setVelocityAddr, 'void', ['pointer', 'pointer']);
+console.log("Actor::SetVelocity() at  address: " + setVelocityAddr);
+
+var worldTickAddr = Module.findExportByName("libGameLogic.so", "_ZN5World4TickEf");
+console.log("World::Tick() at  address: " + worldTickAddr);
+
 function chatHelper(msg, thisReference) {
 var token = msg.split(" ");
 if (token[0] === "!fly_on") {
@@ -79,21 +110,12 @@ function freeze(thisReference) {
     setVelocity(thisReference, Vector3);
 }
 
-
-var getPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11GetPositionEv");
-console.log("Actor::GetPosition() at  address: " + getPositionAddr);
-var getPosition = new NativeFunction(getPositionAddr, ['float', 'float', 'float'], ['pointer']);
-
-var setPositionAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetPositionERK7Vector3");
-console.log("Actor::SetPosition() at  address: " + setPositionAddr);
-var setPosition = new NativeFunction(setPositionAddr, 'void', ['pointer', 'pointer']);
-
-var setVelocityAddr = Module.findExportByName("libGameLogic.so", "_ZN5Actor11SetVelocityERK7Vector3");
-var setVelocity = new NativeFunction(setVelocityAddr, 'void', ['pointer', 'pointer']);
-console.log("Actor::SetVelocity() at  address: " + setVelocityAddr);
-
-var worldTickAddr = Module.findExportByName("libGameLogic.so", "_ZN5World4TickEf");
-console.log("World::Tick() at  address: " + worldTickAddr);
+function activateDLC(thisReference) {
+    console.log("Trying to activate DLC...");
+    var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
+    dlcSubmit(thisReference, validKey);
+    console.log("Submitted DLC. Did it work?");
+}
 
 Interceptor.attach(worldTickAddr,
     {
@@ -104,11 +126,6 @@ Interceptor.attach(worldTickAddr,
         }
     });
 
-var Vector3 = Memory.alloc(16);
-
-//Find "Player::Chat"
-var chat = Module.findExportByName("libGameLogic.so", "_ZN6Player4ChatEPKc");
-console.log("Player::Chat() at  address: " + chat);
 // Add our logger
 Interceptor.attach(chat, {
     onEnter: function (args) { // 0 => this; 1 => cont char* (our text)
@@ -117,9 +134,7 @@ Interceptor.attach(chat, {
         chatHelper(chatMsg, args[0]);
     }
 });
-    // Find Player::GetWalkingSpeed()
-var walkSpeed = Module.findExportByName("libGameLogic.so", "_ZN6Player15GetWalkingSpeedEv");
-console.log("Player::GetWalkingSpeed() at address: " + walkSpeed);
+
 // Check Speed
 Interceptor.attach(walkSpeed,
     {
@@ -140,8 +155,6 @@ Interceptor.attach(walkSpeed,
         }
     });
 
-var jumpState = Module.findExportByName("libGameLogic.so", "_ZN6Player12SetJumpStateEb");
-console.log("Player::SetJumpState() at address: " + jumpState);
 
 Interceptor.attach(jumpState,
 {
@@ -165,16 +178,7 @@ Interceptor.attach(jumpState,
         }
     }
 });
-// Find Player::SubmitDLCKey()
-var dlcSubmitAddr = Module.findExportByName("libGameLogic.so", "_ZN6Player12SubmitDLCKeyEPKc");
-var dlcSubmit = new NativeFunction(dlcSubmitAddr, 'void', ['pointer', 'pointer']);
-console.log("Player::SubmitDLCKey() at address: " + dlcSubmitAddr);
-function activateDLC(thisReference) {
-    console.log("Trying to activate DLC...");
-    var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
-    dlcSubmit(thisReference, validKey);
-    console.log("Submitted DLC. Did it work?");
-}
+
 Interceptor.attach(dlcSubmitAddr, {
     onEnter: function (args) {
         console.log("This function was entered!");
