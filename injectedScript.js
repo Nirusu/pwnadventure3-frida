@@ -2,12 +2,15 @@
 var Player = {
     m_walkingSpeed : 200,
     objectInMemory: 0,
+    lastX : null,
+    lastY : null,
 };
 
 // Cheat status
 var cheatStatus = {
     walkingSpeed : 0,
     fly : 0,
+    highjump : 0,
     freeze : 0,
 };
 
@@ -43,13 +46,24 @@ console.log("World::Tick() at  address: " + worldTickAddr);
 
 function chatHelper(msg, thisReference) {
 var token = msg.split(" ");
+if (token[0] === "!highjump_on") {
+    console.log("[CHEAT]: Highjumping enabled.");
+    cheatStatus.highjump = 1;
+}
+if (token[0] === "!highjump_off") {
+    console.log("[CHEAT]: Highjumping disabled.");
+    cheatStatus.highjump = 0;
+}
 if (token[0] === "!fly_on") {
     console.log("[CHEAT]: Flying enabled.");
     cheatStatus.fly = 1;
+    cheatStatus.freeze = 1;
+    Player.objectInMemory = thisReference;
 }
 if (token[0] === "!fly_off") {
     console.log("[CHEAT]: Flying disabled.");
     cheatStatus.fly = 0;
+    cheatStatus.freeze = 0;
 }
 if (token[0] === "!freeze_on") {
     console.log("[CHEAT]: Freeze enabled.");
@@ -87,9 +101,6 @@ if (token[0] === "!tp") {
 
 function locate(thisReference) {
     var returnPtr = getPosition(thisReference);
-    console.log(returnPtr[0]);
-    console.log(returnPtr[1]);
-    console.log(returnPtr[2]);
     return [returnPtr[0], returnPtr[1], returnPtr[2]];
 }
 
@@ -122,6 +133,24 @@ Interceptor.attach(worldTickAddr,
         onEnter: function (args) {
             if (cheatStatus.freeze == 1) {
                 freeze(Player.objectInMemory);
+            }
+            if (cheatStatus.fly == 1) {
+                var currentPosition = locate(Player.objectInMemory);
+
+                if (Player.lastX != null && Player.lastY != null) {
+                    var differenceX = Player.lastX - currentPosition[0];
+                    var differenceY = Player.lastY - currentPosition[1];
+    
+                    differenceX = differenceX * 1000;
+                    differenceY = differenceY * 1000;
+                    console.log("differenceX : " + differenceX);
+                    console.log("differenceY : " + differenceY);
+
+                    teleport(Player.objectInMemory, currentPosition[0] - differenceX, currentPosition[1] - differenceY, currentPosition[2]);
+                }
+                currentPosition = locate(Player.objectInMemory);
+                Player.lastX = currentPosition[0];
+                Player.lastY = currentPosition[1];
             }
         }
     });
@@ -165,7 +194,7 @@ Interceptor.attach(jumpState,
         this.jumpHoldTime = ptr(args[0]).add(744) // Offset m_jumpHoldTime
         console.log("JumpSpeed at address: " + this.jumpSpeedAddr);
         console.log("JumpHoldTime at address: " + this.jumpHoldTime);
-        if (cheatStatus.fly == 1) 
+        if (cheatStatus.highjump == 1) 
         {
             Memory.writeFloat(this.jumpSpeedAddr, 800);
             Memory.writeFloat(this.jumpHoldTime, 10);
@@ -175,6 +204,11 @@ Interceptor.attach(jumpState,
             // Original values read out from memory
             Memory.writeFloat(this.jumpSpeedAddr, 420);
             Memory.writeFloat(this.jumpHoldTime, 0.20000000298023224);
+        }
+        if (cheatStatus.fly == 1)
+        {
+            var currentPosition = locate(Player.objectInMemory);
+            teleport(Player.objectInMemory, currentPosition[0], currentPosition[1], currentPosition[2] + 1000);
         }
     }
 });
