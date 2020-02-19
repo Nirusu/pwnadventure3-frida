@@ -15,7 +15,7 @@ var cheatStatus = {
 };
 
 // Variable we're using for Vector3 (x,y,z coordinates) 
-var Vector3 = Memory.alloc(16);
+var Vector3 = Memory.alloc(12);
 
 // Get adresses of original function calls & create them as callable JavaScript functions (if needed)
 var chat = Module.findExportByName("libGameLogic.so", "_ZN6Player4ChatEPKc");
