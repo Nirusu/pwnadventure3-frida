@@ -114,6 +114,11 @@ if (token[0] === "!wspeed_off") {
 if (token[0] === "!tp") {
     console.log("[CHEAT]: Teleporting to " + token[1] + " " + token[2] + " "+ token[3]);
     teleport(parseInt(token[1]), parseInt(token[2]), parseInt(token[3]));
+    if (cheatStatus.fly == 1)
+    {
+        Player.lastX = x;
+        Player.lastY = y;
+    }
     }
 }
 
@@ -129,11 +134,6 @@ function teleport(x, y, z) {
     Memory.writeFloat(ptr(Vector3).add(4), y);
     Memory.writeFloat(ptr(Vector3).add(8), z);
     setPosition(Player.objectInMemory, Vector3);
-    if (cheatStatus.fly == 1)
-    {
-        Player.lastX = x;
-        Player.lastY = y;
-    }
 }
 
 // Freeze player by setting it's velocity to 0
