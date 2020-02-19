@@ -67,6 +67,8 @@ if (token[0] === "!fly_off") {
     console.log("[CHEAT]: Flying disabled.");
     cheatStatus.fly = 0;
     cheatStatus.freeze = 0;
+    Player.lastX = null;
+    Player.lastY = null;
 }
 if (token[0] === "!freeze_on") {
     console.log("[CHEAT]: Freeze enabled.");
@@ -89,7 +91,11 @@ if (token[0] === "!dlc") {
 }
 if (token[0] == "!gp") {
     console.log("[CHEAT] Trying to get position...");
-    locate(thisReference);
+    var currentPostion = locate(thisReference);
+    console.log("[CHEAT]: Current Position:");
+    console.log("x: " + currentPostion[0]);
+    console.log("y: " + currentPostion[1]);
+    console.log("z: " + currentPostion[2]);
 }
 if (token[0] === "!wspeed_off") {
     Player.m_walkingSpeed = 200;
@@ -114,6 +120,11 @@ function teleport(thisReference, x, y, z) {
     Memory.writeFloat(ptr(Vector3).add(4), y);
     Memory.writeFloat(ptr(Vector3).add(8), z);
     setPosition(thisReference, Vector3);
+    if (cheatStatus.fly == 1)
+    {
+        Player.lastX = x;
+        Player.lastY = y;
+    }
 }
 
 // Freeze player by setting it's velocity to 0
