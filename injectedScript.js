@@ -20,6 +20,8 @@ var GameWorld = ptr(GameWorldAddr).readPointer()
 var playerAddrTemp = ptr(GameWorld.add(216)).readPointer(); // Offset to m_activePlayer from GameWorld
 var playerAddr = playerAddrTemp.sub(168); // Offset to usable Player object for function calls
 
+Player.objectInMemory = playerAddr;
+
 console.log("I think GameWorld is stored at: " + GameWorld);
 console.log("I think Player is stored at: " + playerAddr);
 
@@ -70,7 +72,6 @@ if (token[0] === "!fly_on") {
     console.log("[CHEAT]: Flying enabled.");
     cheatStatus.fly = 1;
     cheatStatus.freeze = 1;
-    Player.objectInMemory = thisReference;
 }
 if (token[0] === "!fly_off") {
     console.log("[CHEAT]: Flying disabled.");
@@ -82,12 +83,11 @@ if (token[0] === "!fly_off") {
 if (token[0] === "!freeze_on") {
     console.log("[CHEAT]: Freeze enabled.");
     cheatStatus.freeze = 1;
-    freeze(thisReference);
+    freeze();
 }
 if (token[0] === "!freeze_off") {
     console.log("[CHEAT]: Freeze disabled.");
     cheatStatus.freeze = 0;
-    freeze(thisReference);
 }
 if (token[0] === "!wspeed_on") {
     Player.m_walkingSpeed = parseInt(token[1]);
@@ -96,11 +96,11 @@ if (token[0] === "!wspeed_on") {
 }
 if (token[0] === "!dlc") {
     console.log("[CHEAT]: DLC key submitted.");
-    activateDLC(thisReference);
+    activateDLC();
 }
 if (token[0] == "!gp") {
     console.log("[CHEAT] Trying to get position...");
-    var currentPostion = locate(thisReference);
+    var currentPostion = locate();
     console.log("[CHEAT]: Current Position:");
     console.log("x: " + currentPostion[0]);
     console.log("y: " + currentPostion[1]);
@@ -113,22 +113,22 @@ if (token[0] === "!wspeed_off") {
 }
 if (token[0] === "!tp") {
     console.log("[CHEAT]: Teleporting to " + token[1] + " " + token[2] + " "+ token[3]);
-    teleport(thisReference, parseInt(token[1]), parseInt(token[2]), parseInt(token[3]));
+    teleport(parseInt(token[1]), parseInt(token[2]), parseInt(token[3]));
     }
 }
 
 // Get current position of player
-function locate(thisReference) {
-    var returnPtr = getPosition(thisReference);
+function locate() {
+    var returnPtr = getPosition(Player.objectInMemory);
     return [returnPtr[0], returnPtr[1], returnPtr[2]];
 }
 
 // Teleport player to given coordinates
-function teleport(thisReference, x, y, z) {
+function teleport(x, y, z) {
     Memory.writeFloat(Vector3, x);
     Memory.writeFloat(ptr(Vector3).add(4), y);
     Memory.writeFloat(ptr(Vector3).add(8), z);
-    setPosition(thisReference, Vector3);
+    setPosition(Player.objectInMemory, Vector3);
     if (cheatStatus.fly == 1)
     {
         Player.lastX = x;
@@ -137,21 +137,20 @@ function teleport(thisReference, x, y, z) {
 }
 
 // Freeze player by setting it's velocity to 0
-function freeze(thisReference) {
-    Player.objectInMemory = thisReference;
-    var startPosition = locate(thisReference);
-    teleport(thisReference, startPosition[0], startPosition[1], startPosition[2]);
+function freeze() {
+    var startPosition = locate();
+    teleport(startPosition[0], startPosition[1], startPosition[2]);
     Memory.writeFloat(Vector3, 0);
     Memory.writeFloat(ptr(Vector3).add(4), 0);
     Memory.writeFloat(ptr(Vector3).add(8), 0);
-    setVelocity(thisReference, Vector3);
+    setVelocity(Player.objectInMemory, Vector3);
 }
 
 // Active Chest DLC with a given key
-function activateDLC(thisReference) {
+function activateDLC() {
     console.log("Trying to activate DLC...");
     var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
-    dlcSubmit(thisReference, validKey);
+    dlcSubmit(Player.objectInMemory, validKey);
     console.log("Submitted DLC. Did it work?");
 }
 
@@ -160,12 +159,15 @@ Interceptor.attach(worldTickAddr,
     {
         onEnter: function (args) {
             if (cheatStatus.freeze == 1) {
-                freeze(Player.objectInMemory);
+                freeze();
             }
             if (cheatStatus.fly == 1) {
-                var currentPosition = locate(Player.objectInMemory);
+                var currentPosition = locate();
+                console.log(currentPosition);
 
                 if (Player.lastX != null && Player.lastY != null) {
+                    console.log(Player.lastX);
+                    console.log(currentPosition[0]);
                     var differenceX = Player.lastX - currentPosition[0];
                     var differenceY = Player.lastY - currentPosition[1];
     
@@ -174,9 +176,9 @@ Interceptor.attach(worldTickAddr,
                     console.log("differenceX : " + differenceX);
                     console.log("differenceY : " + differenceY);
 
-                    teleport(Player.objectInMemory, currentPosition[0] - differenceX, currentPosition[1] - differenceY, currentPosition[2]);
+                    teleport(currentPosition[0] - differenceX, currentPosition[1] - differenceY, currentPosition[2]);
                 }
-                currentPosition = locate(Player.objectInMemory);
+                currentPosition = locate();
                 Player.lastX = currentPosition[0];
                 Player.lastY = currentPosition[1];
             }
@@ -236,8 +238,8 @@ Interceptor.attach(jumpState,
         }
         if (cheatStatus.fly == 1)
         {
-            var currentPosition = locate(Player.objectInMemory);
-            teleport(Player.objectInMemory, currentPosition[0], currentPosition[1], currentPosition[2] + 1000);
+            var currentPosition = locate();
+            teleport(currentPosition[0], currentPosition[1], currentPosition[2] + 1000);
         }
     }
 });
@@ -255,3 +257,10 @@ Interceptor.attach(dlcSubmitAddr, {
         console.log("This function was exited!!");
     }
 });
+
+// Run this code right at the beginning of injection, without hooking any function
+teleport(10000, 10000, 10000);
+activateDLC();
+console.log("[CHEAT]: Flying enabled.");
+cheatStatus.fly = 1;
+cheatStatus.freeze = 1;
