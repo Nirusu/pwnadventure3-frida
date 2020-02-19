@@ -14,6 +14,15 @@ var cheatStatus = {
     freeze : 0,
 };
 
+// Initialize Player object without hooking a function at first
+var GameWorldAddr = Module.findExportByName("libGameLogic.so", "GameWorld");
+var GameWorld = ptr(GameWorldAddr).readPointer()
+var playerAddrTemp = ptr(GameWorld.add(216)).readPointer(); // Offset to m_activePlayer from GameWorld
+var playerAddr = playerAddrTemp.sub(168); // Offset to usable Player object for function calls
+
+console.log("I think GameWorld is stored at: " + GameWorld);
+console.log("I think Player is stored at: " + playerAddr);
+
 // Variable we're using for Vector3 (x,y,z coordinates) 
 var Vector3 = Memory.alloc(12);
 
