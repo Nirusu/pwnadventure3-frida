@@ -14,8 +14,10 @@ var cheatStatus = {
     freeze : 0,
 };
 
+// Variable we're using for Vector3 (x,y,z coordinates) 
 var Vector3 = Memory.alloc(16);
 
+// Get adresses of original function calls & create them as callable JavaScript functions (if needed)
 var chat = Module.findExportByName("libGameLogic.so", "_ZN6Player4ChatEPKc");
 console.log("Player::Chat() at  address: " + chat);
 
@@ -44,6 +46,7 @@ console.log("Actor::SetVelocity() at  address: " + setVelocityAddr);
 var worldTickAddr = Module.findExportByName("libGameLogic.so", "_ZN5World4TickEf");
 console.log("World::Tick() at  address: " + worldTickAddr);
 
+// Read commands from chat
 function chatHelper(msg, thisReference) {
 var token = msg.split(" ");
 if (token[0] === "!highjump_on") {
@@ -99,11 +102,13 @@ if (token[0] === "!tp") {
     }
 }
 
+// Get current position of player
 function locate(thisReference) {
     var returnPtr = getPosition(thisReference);
     return [returnPtr[0], returnPtr[1], returnPtr[2]];
 }
 
+// Teleport player to given coordinates
 function teleport(thisReference, x, y, z) {
     Memory.writeFloat(Vector3, x);
     Memory.writeFloat(ptr(Vector3).add(4), y);
@@ -111,6 +116,7 @@ function teleport(thisReference, x, y, z) {
     setPosition(thisReference, Vector3);
 }
 
+// Freeze player by setting it's velocity to 0
 function freeze(thisReference) {
     Player.objectInMemory = thisReference;
     var startPosition = locate(thisReference);
@@ -121,6 +127,7 @@ function freeze(thisReference) {
     setVelocity(thisReference, Vector3);
 }
 
+// Active Chest DLC with a given key
 function activateDLC(thisReference) {
     console.log("Trying to activate DLC...");
     var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
@@ -128,6 +135,7 @@ function activateDLC(thisReference) {
     console.log("Submitted DLC. Did it work?");
 }
 
+// Freeze & Fly require operations on every gameserver tick, so let's hook the Tick function
 Interceptor.attach(worldTickAddr,
     {
         onEnter: function (args) {
@@ -185,6 +193,7 @@ Interceptor.attach(walkSpeed,
     });
 
 
+// Inject into SetJumpState function for walking speed, high jumping and flying
 Interceptor.attach(jumpState,
 {
     // Get Player * this location
@@ -213,6 +222,7 @@ Interceptor.attach(jumpState,
     }
 });
 
+// Hook into DLC submit code to replace every entered (properly invalid) key with a correct one
 Interceptor.attach(dlcSubmitAddr, {
     onEnter: function (args) {
         console.log("This function was entered!");
