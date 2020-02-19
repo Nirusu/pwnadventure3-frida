@@ -166,15 +166,11 @@ Interceptor.attach(worldTickAddr,
                 console.log(currentPosition);
 
                 if (Player.lastX != null && Player.lastY != null) {
-                    console.log(Player.lastX);
-                    console.log(currentPosition[0]);
                     var differenceX = Player.lastX - currentPosition[0];
                     var differenceY = Player.lastY - currentPosition[1];
     
                     differenceX = differenceX * 1000;
                     differenceY = differenceY * 1000;
-                    console.log("differenceX : " + differenceX);
-                    console.log("differenceY : " + differenceY);
 
                     teleport(currentPosition[0] - differenceX, currentPosition[1] - differenceY, currentPosition[2]);
                 }
