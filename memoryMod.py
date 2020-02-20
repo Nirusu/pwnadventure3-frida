@@ -4,12 +4,14 @@ import os
 
 session = frida.attach("PwnAdventure3-Linux-Shipping")
 
-stream = os.popen('gdb -p  $(pidof PwnAdventure3-Linux-Shipping) --batch --ex "p (Player*)((ClientWorld*)GameWorld).m_activePlayer.m_object" -ex "quit" | awk \'/\$1/ {print}\' | grep "$1" | awk \'{print $5}\'')
-playerMemAddress = stream.read().rstrip()
-
 script = session.create_script("""
 
-	var Player = ptr("%s");
+	var gameWorldAddr = Module.findExportByName("libGameLogic.so", "GameWorld");
+	var gameWorld = ptr(gameWorldAddr).readPointer()
+	var playerAddrTemp = ptr(gameWorld.add(216)).readPointer(); // Offset to m_activePlayer from GameWorld
+	var playerAddr = playerAddrTemp.sub(168); // Offset to usable Player object
+
+	var Player = playerAddr;
 	console.log("Player at address: " + Player);
 
 	var m_walkingSpeed = ptr(Player.add(736));	//m_walkingSpeed memory address offset from playerMemAddress
@@ -47,7 +49,7 @@ script = session.create_script("""
 	console.log("New jumpHoldTime value\t= " + jumpHoldTime);
 	console.log(" ");
 
-""" % playerMemAddress)
+""")
 
 def on_message(message, data):
     print(message)
