@@ -15,8 +15,8 @@ script = session.create_script("""
 	console.log("Player at address: " + Player);
 
 	var m_walkingSpeed = ptr(Player.add(736));	//m_walkingSpeed memory address offset from playerMemAddress
-    var m_jumpSpeed = ptr(Player.add(740));		//m_jumpSpeed memory address offset from playerMemAddress
-    var m_jumpHoldTime = ptr(Player.add(744));	//m_jumpHoldTime memory address offset from playerMemAddress
+	var m_jumpSpeed = ptr(Player.add(740));		//m_jumpSpeed memory address offset from playerMemAddress
+	var m_jumpHoldTime = ptr(Player.add(744));	//m_jumpHoldTime memory address offset from playerMemAddress
 
 	console.log(" ");
 	console.log("m_walkingSpeed at address\t: " + m_walkingSpeed);
