@@ -14,7 +14,7 @@ var cheatStatus = {
     freeze : 0,
 };
 
-// Initialize Player object without hooking a function at first
+// Initialize Player object without getting it from another context
 var GameWorldAddr = Module.findExportByName("libGameLogic.so", "GameWorld");
 var GameWorld = ptr(GameWorldAddr).readPointer()
 var playerAddrTemp = ptr(GameWorld.add(216)).readPointer(); // Offset to m_activePlayer from GameWorld
@@ -149,9 +149,10 @@ function freeze() {
 // Active Chest DLC with a given key
 function activateDLC() {
     console.log("Trying to activate DLC...");
+    // Valid Key taken from: http://0xebfe.net/blog/2015/01/24/ghost-in-the-shellcode-2015-pirates-treasure-500-write-up/
     var validKey = Memory.allocUtf8String("6R87D-Y0AVZ-NA3X5-ME2DK-NUA0W");
     dlcSubmit(Player.objectInMemory, validKey);
-    console.log("Submitted DLC. Did it work?");
+    console.log("Submitted DLC key. Note this only works once, so if you've already activated it, nothing happens likely.");
 }
 
 // Freeze & Fly require operations on every gameserver tick, so let's hook the Tick function
@@ -254,7 +255,7 @@ Interceptor.attach(dlcSubmitAddr, {
     }
 });
 
-// Run this code right at the beginning of injection, without hooking any function
+// Run this code right at the beginning of injection
 teleport(10000, 10000, 10000);
 activateDLC();
 console.log("[CHEAT]: Flying enabled.");
