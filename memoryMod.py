@@ -43,6 +43,10 @@ script = session.create_script("""
 	Memory.writeFloat(m_jumpHoldTime, 0.20000000298023224);
 */
 
+	walkingSpeed = Memory.readFloat(m_walkingSpeed);
+	jumpSpeed = Memory.readFloat(m_jumpSpeed);
+	jumpHoldTime = Memory.readFloat(m_jumpHoldTime);
+
 	console.log(" ");
 	console.log("New walkingSpeed value\t= " + walkingSpeed);
 	console.log("New jumpSpeed value   \t= " + jumpSpeed);
